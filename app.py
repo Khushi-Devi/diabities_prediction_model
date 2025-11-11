@@ -8,38 +8,13 @@ import joblib
 # Page Setup
 # --------------------------
 st.set_page_config(page_title="AI Diabetes Predictor Dashboard", layout="wide")
-# Custom CSS for tab styling
-st.markdown(
-    """
-    <style>
-    /* Change inactive tab color */
-    .stTabs [data-baseweb="tab"] {
-        color: #1E90FF; /* Text color for inactive tabs (dodger blue) */
-        background-color: #F0F8FF; /* Light background (AliceBlue) */
-        border-radius: 10px;
-        padding: 8px 16px;
-        margin-right: 5px;
-    }
-
-    /* Change active tab color */
-    .stTabs [aria-selected="true"] {
-        color: white !important;
-        background-color: #0A3D62 !important; /* Dark royal blue */
-        font-weight: 600;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 
 # --------------------------
 # Load Data
 # --------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("diabetes.csv")
-    return df
+    return pd.read_csv("diabetes.csv")
 
 @st.cache_data
 def load_model_results():
@@ -71,16 +46,43 @@ with tabs[0]:
     st.subheader("Basic Statistics")
     st.write(df.describe())
 
+    # ---- FIXED CORRELATION HEATMAP ----
     st.subheader("Correlation Heatmap")
-    plt.figure(figsize=(8,5))
-    sns.heatmap(df.corr(), annot=True, cmap="Blues")
-    st.pyplot(plt)
+    col_center = st.columns([1, 3, 1])  # centers chart
+    with col_center[1]:
+        corr = df.corr(numeric_only=True)
+        fig, ax = plt.subplots(figsize=(6, 5))
+        sns.heatmap(
+            corr,
+            annot=True,
+            fmt=".2f",
+            cmap="coolwarm",
+            center=0,
+            linewidths=0.5,
+            cbar_kws={"shrink": 0.8, "label": "Correlation"},
+            square=True,
+            ax=ax
+        )
+        ax.set_title("Feature Correlation Heatmap", fontsize=12, pad=10)
+        plt.xticks(rotation=45, ha='right')
+        plt.yticks(rotation=0)
+        st.pyplot(fig)
 
+    # ---- IMPROVED TARGET VARIABLE DISTRIBUTION ----
     st.subheader("Distribution of Target Variable")
-    fig, ax = plt.subplots()
-    sns.countplot(x='Outcome', data=df, palette='Blues', ax=ax)
-    ax.set_xticklabels(['Non-Diabetic', 'Diabetic'])
-    st.pyplot(fig)
+    col_center = st.columns([1, 2, 1])
+    with col_center[1]:
+        fig, ax = plt.subplots(figsize=(5, 3))
+        sns.countplot(x='Outcome', data=df, palette='coolwarm', ax=ax)
+        ax.set_xticklabels(['Non-Diabetic', 'Diabetic'])
+        ax.set_xlabel("")
+        ax.set_ylabel("Count")
+        ax.set_title("Target Variable Distribution", fontsize=12, pad=10)
+        for p in ax.patches:
+            ax.annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()),
+                        ha='center', va='center', fontsize=9, color='black', xytext=(0, 5),
+                        textcoords='offset points')
+        st.pyplot(fig)
 
 # ==========================
 # TAB 2 — MODEL COMPARISON
@@ -89,14 +91,26 @@ with tabs[1]:
     st.header("🤖 Model Performance Comparison")
     st.write("This section compares accuracy and other metrics for all trained models.")
 
-    st.subheader("Model Scores Table")
-    st.dataframe(results)
+    # ---- Highlighted Metrics Table ----
+    st.subheader("🏆 Model Metrics Table")
+    styled_results = results.style.highlight_max(axis=0, color="lightgreen")
+    st.dataframe(styled_results, use_container_width=True)
 
-    st.subheader("Model Accuracy Comparison")
-    fig, ax = plt.subplots()
-    sns.barplot(x="Model", y="Accuracy", data=results, palette="Blues_d", ax=ax)
-    plt.xticks(rotation=45)
-    st.pyplot(fig)
+    # ---- Grouped Bar Chart ----
+    st.subheader("📈 Model Metrics Comparison")
+
+    melted = results.melt(id_vars=["Model"], var_name="Metric", value_name="Score")
+
+    col_center = st.columns([1, 3, 1])
+    with col_center[1]:
+        fig, ax = plt.subplots(figsize=(7, 4))
+        sns.barplot(x="Metric", y="Score", hue="Model", data=melted, palette="Blues_d", ax=ax)
+        ax.set_title("Model Performance by Metric", fontsize=12, pad=10)
+        ax.set_ylabel("Score")
+        ax.set_xlabel("")
+        plt.xticks(rotation=45, ha='right')
+        plt.legend(title="Model", bbox_to_anchor=(1.05, 1), loc='upper left')
+        st.pyplot(fig)
 
     best_model_name = results.loc[results['Accuracy'].idxmax(), 'Model']
     st.success(f"🏆 **Best Performing Model:** {best_model_name}")
@@ -133,4 +147,4 @@ with tabs[2]:
 # Footer
 # ==========================
 st.markdown("---")
-st.caption("Developed with 💙 using Streamlit | AI Diabetes Predictor © 2025")
+st.caption("Developed with ❤️ using Streamlit and Machine Learning")
