@@ -118,30 +118,62 @@ with tabs[1]:
 # ==========================
 # TAB 3 — LIVE PREDICTION
 # ==========================
+# ==========================
+# TAB 3 — LIVE PREDICTION
+# ==========================
 with tabs[2]:
     st.header("🔮 Live Prediction")
     st.write("Enter health metrics below to predict if a person is likely to have diabetes.")
 
     col1, col2 = st.columns(2)
     with col1:
-        Pregnancies = st.number_input("Pregnancies", min_value=0, max_value=20, value=2)
-        Glucose = st.number_input("Glucose", min_value=0, max_value=300, value=120)
-        BloodPressure = st.number_input("Blood Pressure", min_value=0, max_value=200, value=70)
-        SkinThickness = st.number_input("Skin Thickness", min_value=0, max_value=100, value=20)
-    with col2:
-        Insulin = st.number_input("Insulin", min_value=0, max_value=900, value=80)
-        BMI = st.number_input("BMI", min_value=0.0, max_value=70.0, value=25.0)
-        DiabetesPedigreeFunction = st.number_input("Diabetes Pedigree Function", min_value=0.0, max_value=3.0, value=0.5)
-        Age = st.number_input("Age", min_value=1, max_value=120, value=30)
+        Pregnancies = st.number_input(
+            "Pregnancies", min_value=0, max_value=20, value=2, step=1, format="%d"
+        )
+        Glucose = st.number_input(
+            "Glucose (mg/dL)", min_value=0, max_value=300, value=120, step=1, format="%d"
+        )
+        BloodPressure = st.number_input(
+            "Blood Pressure (mm Hg)", min_value=0, max_value=200, value=70, step=1, format="%d"
+        )
+        SkinThickness = st.number_input(
+            "Skin Thickness (mm)", min_value=0, max_value=100, value=20, step=1, format="%d"
+        )
 
-    if st.button("Get Prediction"):
-        user_data = [[Pregnancies, Glucose, BloodPressure, SkinThickness,
-                      Insulin, BMI, DiabetesPedigreeFunction, Age]]
+    with col2:
+        Insulin = st.number_input(
+            "Insulin (µU/mL)", min_value=0, max_value=900, value=80, step=5, format="%d"
+        )
+        BMI = st.number_input(
+            "BMI", min_value=0.0, max_value=70.0, value=25.0, step=0.1, format="%.1f"
+        )
+        DiabetesPedigreeFunction = st.number_input(
+            "Diabetes Pedigree Function", min_value=0.0, max_value=3.0, value=0.5, step=0.01, format="%.2f"
+        )
+        Age = st.number_input(
+            "Age (years)", min_value=1, max_value=120, value=30, step=1, format="%d"
+        )
+
+    # Prediction button
+    if st.button("Get Prediction", type="primary"):
+        user_data = [[
+            Pregnancies,
+            Glucose,
+            BloodPressure,
+            SkinThickness,
+            Insulin,
+            BMI,
+            DiabetesPedigreeFunction,
+            Age
+        ]]
         prediction = best_model.predict(user_data)[0]
+        probability = best_model.predict_proba(user_data)[0][1]  # confidence score
+
         if prediction == 1:
-            st.error("🔴 The person is **likely Diabetic**.")
+            st.error(f"🔴 The person is **likely Diabetic**.\n\n**Model Confidence:** {probability:.2%}")
         else:
-            st.success("🟢 The person is **likely Non-Diabetic**.")
+            st.success(f"🟢 The person is **likely Non-Diabetic**.\n\n**Model Confidence:** {1 - probability:.2%}")
+
 
 # ==========================
 # Footer
